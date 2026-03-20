@@ -1,12 +1,12 @@
 {% extends 'base.html' %}
-{% block title %}Dashboard — TMS{% endblock %}
+{% block title %}Dashboard — MallDesk{% endblock %}
 {% block content %}
 <div class="topbar">
   <div>
     <h2>Dashboard</h2>
     <div class="sub">Welcome back, {{ user.full_name }}</div>
   </div>
-  <a href="{% url 'ticket_create' %}" class="btn btn-primary">+ New Ticket</a>
+  <div class="topbar-actions"><a href="{% url 'ticket_create' %}" class="btn btn-primary">➕ <span>New Ticket</span></a></div>
 </div>
 
 <div class="stats-grid">

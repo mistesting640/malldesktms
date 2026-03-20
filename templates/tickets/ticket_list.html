@@ -6,7 +6,7 @@
     <h2>{% if user.is_external %}My Tickets{% else %}All Tickets{% endif %}</h2>
     <div class="sub">{% if user.is_external %}Tickets you have submitted{% else %}All tickets across all malls{% endif %}</div>
   </div>
-  <a href="{% url 'ticket_create' %}" class="btn btn-primary">+ New Ticket</a>
+  <div class="topbar-actions"><a href="{% url 'ticket_create' %}" class="btn btn-primary">➕ <span>New Ticket</span></a></div>
 </div>
 
 <!-- Filter Bar -->

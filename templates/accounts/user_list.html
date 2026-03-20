@@ -12,7 +12,7 @@
       <h3>Internal Users</h3>
       <span style="font-size:12px;color:var(--muted);">{{ internal_users.count }} users</span>
     </div>
-    <table>
+    <div class="table-wrap"><table>
       <thead>
         <tr><th>Name</th><th>Department</th><th>Role</th><th>Status</th></tr>
       </thead>
@@ -41,7 +41,7 @@
         <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px;">No internal users yet.</td></tr>
         {% endfor %}
       </tbody>
-    </table>
+    </table></div>
   </div>
 
   <div class="card">
@@ -49,7 +49,7 @@
       <h3>External Users</h3>
       <span style="font-size:12px;color:var(--muted);">{{ external_users.count }} users</span>
     </div>
-    <table>
+    <div class="table-wrap"><table>
       <thead>
         <tr><th>Name</th><th>Business</th><th>Mall</th><th>Tickets</th></tr>
       </thead>
@@ -68,7 +68,7 @@
         <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px;">No external users yet.</td></tr>
         {% endfor %}
       </tbody>
-    </table>
+    </table></div>
   </div>
 </div>
 {% endblock %}

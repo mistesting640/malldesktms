@@ -1,6 +1,15 @@
 {% extends 'base.html' %}
 {% block title %}{{ ticket.ticket_id }} — MallDesk{% endblock %}
 
+
+{% block extra_css %}
+<style>
+@media(max-width:768px){
+  .detail-grid{grid-template-columns:1fr !important;}
+  .form-row{grid-template-columns:1fr !important;}
+}
+</style>
+{% endblock %}
 {% block content %}
 
 <div class="topbar">
@@ -28,7 +37,7 @@
 </div>
 {% endif %}
 
-<div style="display:grid;grid-template-columns:1fr 320px;gap:20px;">
+<div style="display:grid;grid-template-columns:1fr 320px;gap:20px;" class="detail-grid">
 
   <!-- LEFT COLUMN -->
   <div>
