@@ -58,53 +58,100 @@ def _build_cc(ticket, extra_cc=None):
     return list(set(filter(None, cc)))              # deduplicate & remove empty
 
 
+def _send_now(subject, text_body, html_body, to_list, cc_list, bcc_list):
+    """
+    Actual SMTP send — runs in background thread.
+    Uses raw smtplib directly to avoid gunicorn worker timeout.
+    Tries port 587 (STARTTLS) first, falls back to 465 (SSL).
+    """
+    import smtplib, ssl
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+
+    host     = settings.EMAIL_HOST
+    user     = settings.EMAIL_HOST_USER
+    password = settings.EMAIL_HOST_PASSWORD
+    from_email = settings.DEFAULT_FROM_EMAIL
+
+    all_recipients = list(set(to_list + cc_list + bcc_list))
+
+    # Build MIME message
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = subject
+    msg['From']    = from_email
+    msg['To']      = ', '.join(to_list)
+    if cc_list:
+        msg['Cc']  = ', '.join(cc_list)
+    # BCC not added to headers — just included in recipients list
+
+    msg.attach(MIMEText(text_body, 'plain'))
+    if html_body:
+        msg.attach(MIMEText(html_body, 'html'))
+
+    # SSL context — ignore hostname mismatch (DreamHost cert issue)
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode    = ssl.CERT_NONE
+
+    sent = False
+
+    # Try 587 STARTTLS first (works on Render)
+    try:
+        with smtplib.SMTP(host, 587, timeout=20) as smtp:
+            smtp.ehlo()
+            smtp.starttls(context=ctx)
+            smtp.login(user, password)
+            smtp.sendmail(from_email, all_recipients, msg.as_bytes())
+            sent = True
+            logger.info(f"Email sent (587) | TO:{to_list} | {subject}")
+    except Exception as e1:
+        logger.warning(f"Port 587 failed ({e1}), trying 465...")
+
+    # Fallback to 465 SSL
+    if not sent:
+        try:
+            with smtplib.SMTP_SSL(host, 465, context=ctx, timeout=20) as smtp:
+                smtp.login(user, password)
+                smtp.sendmail(from_email, all_recipients, msg.as_bytes())
+                sent = True
+                logger.info(f"Email sent (465) | TO:{to_list} | {subject}")
+        except Exception as e2:
+            logger.error(f"Email failed both ports | {subject} | 587:{e1} | 465:{e2}")
+
+
 def _send(subject, text_body, html_body, to_list, cc_list=None):
     """
+    Sends email in a background thread so the user gets
+    instant response — no waiting for SMTP to complete.
+
     TO  → main recipients
     CC  → visible to all (ticket creator + manual CC)
     BCC → admin always (invisible)
     """
-    try:
-        to_list  = [e for e in (to_list  or []) if e]
-        cc_list  = [e for e in (cc_list  or []) if e]
-        bcc_list = [e for e in _get_admin_emails() if e]
+    import threading
 
-        # Don't duplicate across TO / CC / BCC
-        all_addressed = set(to_list + cc_list)
-        bcc_list = [e for e in bcc_list if e not in all_addressed]
-        cc_list  = [e for e in cc_list  if e not in set(to_list)]
+    to_list  = [e for e in (to_list  or []) if e]
+    cc_list  = [e for e in (cc_list  or []) if e]
+    bcc_list = [e for e in _get_admin_emails() if e]
 
-        # ── DEBUG (remove after confirming emails work) ──
-        print(f"\n[EMAIL DEBUG] Subject : {subject}")
-        print(f"[EMAIL DEBUG] TO      : {to_list}")
-        print(f"[EMAIL DEBUG] CC      : {cc_list}")
-        print(f"[EMAIL DEBUG] BCC     : {bcc_list}")
-        print(f"[EMAIL DEBUG] Backend : {settings.EMAIL_BACKEND}")
-        print(f"[EMAIL DEBUG] Host    : {settings.EMAIL_HOST}:{settings.EMAIL_PORT}")
-        print(f"[EMAIL DEBUG] User    : {settings.EMAIL_HOST_USER}")
+    # Deduplicate across TO / CC / BCC
+    all_addressed = set(to_list + cc_list)
+    bcc_list = [e for e in bcc_list if e not in all_addressed]
+    cc_list  = [e for e in cc_list  if e not in set(to_list)]
 
-        if not to_list:
-            print(f"[EMAIL DEBUG] SKIPPED — no TO recipients")
-            logger.warning(f"Email skipped — no recipients for: {subject}")
-            return
+    if not to_list:
+        logger.warning(f"Email skipped — no recipients for: {subject}")
+        return
 
-        msg = EmailMultiAlternatives(
-            subject=subject,
-            body=text_body,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=to_list,
-            cc=cc_list,
-            bcc=bcc_list,
-        )
-        if html_body:
-            msg.attach_alternative(html_body, 'text/html')
-        msg.send(fail_silently=False)
-        print(f"[EMAIL DEBUG] SUCCESS — email sent to {to_list}")
-        logger.info(f"Email sent | TO:{to_list} | CC:{cc_list} | BCC:{bcc_list} | {subject}")
+    logger.info(f"Queuing email in background | TO:{to_list} | Subject:{subject}")
 
-    except Exception as e:
-        print(f"[EMAIL DEBUG] FAILED — {e}")
-        logger.error(f"Email failed | {subject} | {e}", exc_info=True)
+    # Fire and forget — daemon thread dies if server restarts
+    thread = threading.Thread(
+        target=_send_now,
+        args=(subject, text_body, html_body, to_list, cc_list, bcc_list),
+        daemon=True,
+    )
+    thread.start()
 
 
 def _get_department_managers(department):
