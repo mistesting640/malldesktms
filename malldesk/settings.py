@@ -91,7 +91,7 @@ EMAIL_PORT          = 465
 EMAIL_USE_TLS       = False
 EMAIL_USE_SSL       = False  # handled inside custom backend
 EMAIL_HOST_USER     = 'mis.accounts@vsquareservices.com'
-EMAIL_HOST_PASSWORD = 'Malldesk2026'
+EMAIL_HOST_PASSWORD = 'Legend@7570#Square'
 DEFAULT_FROM_EMAIL  = 'MallDesk <mis.accounts@vsquareservices.com>'
 
 # ─── WHO GETS EMAILS ──────────────────────────────────────────────────────────
@@ -113,3 +113,23 @@ WHATSAPP_NOTIFY_NUMBER = '917503020176'   # ← change to your number
 TICKET_REMINDER_HOURS          = 2    # remind after 2 hours
 TICKET_REMINDER_CHECK_INTERVAL = 30   # background check every 30 minutes
 TICKET_REMINDER_MAX            = 5    # max reminders per ticket (stops spam)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler'},
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'tickets': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
+ 
