@@ -1,13 +1,18 @@
 from pathlib import Path
+from decouple import config, Csv
+import dj_database_url
 import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-change-this-in-production-use-env-variable'
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-in-production')
 
-DEBUG = True
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=Csv())
+
+# Required for Railway/Render — tells Django to trust POST requests from your domain
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost', cast=Csv())
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -22,6 +27,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',   # ← serves static files on Render
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -50,12 +56,21 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'malldesk.wsgi.application'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# ─── DATABASE ─────────────────────────────────────────────────────────────────
+# Uses DATABASE_URL env var on Render (PostgreSQL)
+# Falls back to SQLite for local development
+DATABASE_URL = config('DATABASE_URL', default=None)
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 AUTH_USER_MODEL = 'accounts.User'
 
@@ -71,9 +86,11 @@ TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
 USE_TZ = True
 
+# ─── STATIC FILES ─────────────────────────────────────────────────────────────
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -85,35 +102,28 @@ LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 # ─── EMAIL ────────────────────────────────────────────────────────────────────
-EMAIL_BACKEND       = 'malldesk.custom_email_backend.SSLBypassEmailBackend'
-EMAIL_HOST          = 'smtp.dreamhost.com'
-EMAIL_PORT          = 465
-EMAIL_USE_TLS       = False
-EMAIL_USE_SSL       = False  # handled inside custom backend
-EMAIL_HOST_USER     = 'mis.accounts@vsquareservices.com'
-EMAIL_HOST_PASSWORD = 'Legend@7570#Square'
-DEFAULT_FROM_EMAIL  = 'MallDesk <mis.accounts@vsquareservices.com>'
+EMAIL_BACKEND       = config('EMAIL_BACKEND', default='malldesk.custom_email_backend.SSLBypassEmailBackend')
+EMAIL_HOST          = config('EMAIL_HOST', default='smtp.dreamhost.com')
+EMAIL_PORT          = config('EMAIL_PORT', default=465, cast=int)
+EMAIL_USE_TLS       = config('EMAIL_USE_TLS', default=False, cast=bool)
+EMAIL_USE_SSL       = config('EMAIL_USE_SSL', default=False, cast=bool)
+EMAIL_HOST_USER     = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL  = config('DEFAULT_FROM_EMAIL', default='MallDesk <mis.accounts@vsquareservices.com>')
 
 # ─── WHO GETS EMAILS ──────────────────────────────────────────────────────────
-# BCC on every email — invisible to customer/manager
-MALLDESK_ADMIN_EMAILS = [
-    'mis@vsquareservices.com',
-]
-# CC on every email — visible to recipients
-MALLDESK_CC_EMAILS = [
-    # 'another@vsquareservices.com',
-]
+MALLDESK_ADMIN_EMAILS = config('MALLDESK_ADMIN_EMAILS', default='mis@vsquareservices.com', cast=Csv())
+MALLDESK_CC_EMAILS    = config('MALLDESK_CC_EMAILS', default='', cast=Csv())
 
 # ─── WHATSAPP ─────────────────────────────────────────────────────────────────
-# Number with country code, no + or spaces. India example: 919876543210
-WHATSAPP_NOTIFY_NUMBER = '917503020176'   # ← change to your number
+WHATSAPP_NOTIFY_NUMBER = config('WHATSAPP_NOTIFY_NUMBER', default='')
 
 # ─── TICKET REMINDERS ─────────────────────────────────────────────────────────
-# Send reminder if ticket is Open/In Progress for this many hours without update
-TICKET_REMINDER_HOURS          = 2    # remind after 2 hours
-TICKET_REMINDER_CHECK_INTERVAL = 30   # background check every 30 minutes
-TICKET_REMINDER_MAX            = 5    # max reminders per ticket (stops spam)
+TICKET_REMINDER_HOURS          = config('TICKET_REMINDER_HOURS', default=2, cast=float)
+TICKET_REMINDER_CHECK_INTERVAL = config('TICKET_REMINDER_CHECK_INTERVAL', default=30, cast=int)
+TICKET_REMINDER_MAX            = config('TICKET_REMINDER_MAX', default=5, cast=int)
 
+# ─── LOGGING ──────────────────────────────────────────────────────────────────
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -132,4 +142,3 @@ LOGGING = {
         },
     },
 }
- 
