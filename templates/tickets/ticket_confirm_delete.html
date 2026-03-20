@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Delete {{ ticket.ticket_id }} — MallDesk{% endblock %}
+{% block content %}
+<div style="max-width:480px;margin:80px auto;">
+  <div class="card">
+    <div class="card-header">
+      <h3 style="color:var(--danger);">⚠ Delete Ticket</h3>
+    </div>
+    <div class="card-body">
+      <p style="margin-bottom:16px;line-height:1.6;">
+        Are you sure you want to delete ticket <strong style="color:var(--accent);">{{ ticket.ticket_id }}</strong>?<br>
+        <span style="color:var(--muted);font-size:13px;">This action cannot be undone.</span>
+      </p>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:20px;font-size:13px;">
+        <div style="color:var(--muted);margin-bottom:4px;">Description</div>
+        {{ ticket.complaint_description|truncatechars:120 }}
+      </div>
+      <form method="post" style="display:flex;gap:10px;justify-content:flex-end;">
+        {% csrf_token %}
+        <a href="{% url 'ticket_detail' ticket.pk %}" class="btn btn-ghost">Cancel</a>
+        <button type="submit" class="btn btn-danger">Yes, Delete Ticket</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 0; }
+  .wrapper { max-width: 580px; margin: 32px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+  .header { background: #0b0f1a; padding: 28px 32px; }
+  .header h1 { color: #fff; font-size: 22px; margin: 0; }
+  .header h1 span { color: #3b82f6; }
+  .banner { background: #ef4444; padding: 14px 32px; color: #fff; font-size: 15px; font-weight: 700; }
+  .body { padding: 32px; color: #374151; }
+  .ticket-box { background: #fff5f5; border: 1px solid #fecaca; border-radius: 8px; padding: 20px; margin: 20px 0; }
+  .ticket-id { font-size: 24px; font-weight: 800; color: #dc2626; margin-bottom: 4px; }
+  .row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #fecaca; font-size: 14px; }
+  .row:last-child { border-bottom: none; }
+  .label { color: #991b1b; }
+  .value { font-weight: 500; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .badge-high { background: #fee2e2; color: #dc2626; }
+  .badge-medium { background: #fef3c7; color: #d97706; }
+  .badge-low { background: #d1fae5; color: #059669; }
+  .action-box { background: #fef2f2; border-left: 4px solid #ef4444; padding: 16px 20px; border-radius: 0 8px 8px 0; margin: 20px 0; }
+  .footer { background: #f8fafc; padding: 20px 32px; text-align: center; color: #9ca3af; font-size: 12px; border-top: 1px solid #e2e8f0; }
+  p { line-height: 1.7; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header"><h1>Mall<span>Desk</span></h1></div>
+  <div class="banner">🔔 Action Required — Ticket Awaiting Your Update</div>
+  <div class="body">
+    <p>Dear <strong>{{ ticket.assigned_to.full_name }}</strong>,</p>
+    <p>This is a reminder that ticket <strong>{{ ticket.ticket_id }}</strong> assigned to you has had <strong>no update for {{ hours_inactive }} hours</strong>.</p>
+
+    <div class="ticket-box">
+      <div class="ticket-id">{{ ticket.ticket_id }}</div>
+      <div style="font-size:12px;color:#991b1b;margin-bottom:16px;">Reminder #{{ reminder_count }}</div>
+      <div class="row"><span class="label">Complainant</span><span class="value">{{ ticket.complainant_name }}</span></div>
+      <div class="row"><span class="label">Mall</span><span class="value">{{ ticket.mall.name }}</span></div>
+      <div class="row"><span class="label">Department</span><span class="value">{{ ticket.department.name }}</span></div>
+      <div class="row">
+        <span class="label">Priority</span>
+        <span class="badge badge-{{ ticket.priority }}">{{ ticket.get_priority_display }}</span>
+      </div>
+      <div class="row"><span class="label">Due Date</span><span class="value">{{ ticket.due_date|default:"Not set" }}</span></div>
+      <div class="row"><span class="label">Inactive For</span><span class="value" style="color:#dc2626;font-weight:700;">{{ hours_inactive }} hours</span></div>
+    </div>
+
+    <div class="action-box">
+      <strong>Please log in to MallDesk and:</strong><br>
+      • Update the ticket status<br>
+      • Add a progress note<br>
+      • Or mark it as Resolved if completed
+      {% if ticket.is_overdue %}<br><br><strong style="color:#dc2626;">🔴 This ticket is also OVERDUE — immediate action required.</strong>{% endif %}
+    </div>
+
+    <p><strong>Issue:</strong><br><span style="color:#6b7280;">{{ ticket.complaint_description }}</span></p>
+  </div>
+  <div class="footer">
+    MallDesk Ticket Management &nbsp;·&nbsp; Automated Reminder — Do not reply to this email.
+  </div>
+</div>
+</body>
+</html>

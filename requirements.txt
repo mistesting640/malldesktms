@@ -1,0 +1,6 @@
+Django>=4.2,<5.0
+Pillow>=10.0
+# For production:
+# psycopg2-binary>=2.9   # PostgreSQL adapter
+# gunicorn>=21.0          # Production WSGI server
+# python-decouple>=3.8    # Environment variable management

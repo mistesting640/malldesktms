@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}Tickets — MallDesk{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div>
+    <h2>{% if user.is_external %}My Tickets{% else %}All Tickets{% endif %}</h2>
+    <div class="sub">{% if user.is_external %}Tickets you have submitted{% else %}All tickets across all malls{% endif %}</div>
+  </div>
+  <a href="{% url 'ticket_create' %}" class="btn btn-primary">+ New Ticket</a>
+</div>
+
+<!-- Filter Bar -->
+<div class="card" style="margin-bottom:20px;">
+  <div class="card-body">
+    <form method="get" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+      <div class="form-group" style="margin-bottom:0;flex:1;min-width:160px;">
+        <label>Search</label>
+        {{ filter_form.search }}
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label>Status</label>
+        {{ filter_form.status }}
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label>Priority</label>
+        {{ filter_form.priority }}
+      </div>
+      {% if not user.is_external %}
+      <div class="form-group" style="margin-bottom:0;">
+        <label>Department</label>
+        {{ filter_form.dept }}
+      </div>
+      {% endif %}
+      <button type="submit" class="btn btn-primary" style="align-self:flex-end;">Filter</button>
+      <a href="{% url 'ticket_list' %}" class="btn btn-ghost" style="align-self:flex-end;">Clear</a>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3>{{ tickets.count }} Ticket{{ tickets.count|pluralize }}</h3>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Ticket ID</th>
+        <th>Title / Description</th>
+        {% if not user.is_external %}<th>Complainant</th><th>Mall</th>{% endif %}
+        <th>Department</th>
+        <th>Priority</th>
+        <th>Status</th>
+        <th>Due Date</th>
+        <th>Assigned To</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ticket in tickets %}
+      <tr>
+        <td><span class="ticket-id">{{ ticket.ticket_id }}</span></td>
+        <td style="max-width:220px;">
+          <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            {{ ticket.complaint_description|truncatechars:60 }}
+          </div>
+          <div style="font-size:11px;color:var(--muted);">{{ ticket.get_ticket_type_display }}</div>
+        </td>
+        {% if not user.is_external %}
+        <td>{{ ticket.complainant_name }}</td>
+        <td>{{ ticket.mall.name }}</td>
+        {% endif %}
+        <td>{{ ticket.department.name }}</td>
+        <td><span class="badge badge-{{ ticket.priority }}"><span class="dot"></span>{{ ticket.get_priority_display }}</span></td>
+        <td><span class="badge badge-{{ ticket.ticket_status }}"><span class="dot"></span>{{ ticket.get_ticket_status_display }}</span></td>
+        <td class="{% if ticket.is_overdue %}overdue{% endif %}" style="font-size:12px;">
+          {{ ticket.due_date|default:"—" }}{% if ticket.is_overdue %} ⚠{% endif %}
+        </td>
+        <td style="font-size:12px;color:var(--muted);">{{ ticket.assigned_to.full_name|default:"Unassigned" }}</td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <a href="{% url 'ticket_detail' ticket.pk %}" class="btn btn-ghost btn-sm">View</a>
+            {% if user.is_external and ticket.ticket_status == 'open' %}
+            <a href="{% url 'ticket_edit' ticket.pk %}" class="btn btn-ghost btn-sm">Edit</a>
+            <form method="post" action="{% url 'ticket_delete' ticket.pk %}" style="display:inline;" onsubmit="return confirm('Delete ticket {{ ticket.ticket_id }}?')">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="10" style="text-align:center;color:var(--muted);padding:40px;">
+          No tickets found. <a href="{% url 'ticket_create' %}" style="color:var(--accent);">Create your first ticket →</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

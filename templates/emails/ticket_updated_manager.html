@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html><head><style>
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f6f9;margin:0;padding:0;}
+  .wrapper{max-width:580px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);}
+  .header{background:#0b0f1a;padding:28px 32px;}
+  .header h1{color:#fff;font-size:22px;margin:0;}
+  .header h1 span{color:#3b82f6;}
+  .banner{background:#f0f9ff;padding:14px 32px;font-size:14px;font-weight:600;color:#0369a1;border-bottom:3px solid #0ea5e9;}
+  .body{padding:32px;color:#374151;}
+  .footer{background:#f8fafc;padding:20px 32px;text-align:center;color:#9ca3af;font-size:12px;border-top:1px solid #e2e8f0;}
+  p{line-height:1.7;}
+</style></head>
+<body>
+<div class="wrapper">
+  <div class="header"><h1>Mall<span>Desk</span></h1></div>
+  <div class="banner">📊 Status Update — {{ ticket.ticket_id }}</div>
+  <div class="body">
+    <p>Ticket <strong>{{ ticket.ticket_id }}</strong> has been updated.</p>
+    {% if update.old_status and update.new_status %}
+    <p><strong>Status:</strong> {{ update.old_status|title }} → <strong>{{ update.new_status|cut:"_"|title }}</strong></p>
+    {% endif %}
+    <p><strong>Updated by:</strong> {{ update.updated_by.full_name|default:"System" }}</p>
+    <p><strong>Note:</strong> {{ update.note }}</p>
+    <p><strong>Complainant:</strong> {{ ticket.complainant_name }} — {{ ticket.mall.name }}</p>
+  </div>
+  <div class="footer">MallDesk &nbsp;·&nbsp; Automated manager alert.</div>
+</div>
+</body></html>

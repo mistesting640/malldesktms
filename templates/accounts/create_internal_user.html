@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Add Internal User — MallDesk{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div><h2>Add Internal User</h2><div class="sub">Internal users can only be created by managers or admins</div></div>
+  <a href="{% url 'user_list' %}" class="btn btn-ghost">← Back</a>
+</div>
+
+<div style="max-width:560px;">
+  <div class="card">
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div class="alert alert-error">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-group">
+            <label>Full Name *</label>
+            {{ form.full_name }}
+            {% if form.full_name.errors %}<span style="color:var(--danger);font-size:12px;">{{ form.full_name.errors.0 }}</span>{% endif %}
+          </div>
+          <div class="form-group">
+            <label>Email *</label>
+            {{ form.email }}
+            {% if form.email.errors %}<span style="color:var(--danger);font-size:12px;">{{ form.email.errors.0 }}</span>{% endif %}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Mobile</label>
+          {{ form.mobile }}
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+          <div class="form-group">
+            <label>Role *</label>
+            {{ form.role }}
+          </div>
+          <div class="form-group">
+            <label>Department</label>
+            {{ form.department }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Temporary Password *</label>
+          {{ form.password }}
+          <span style="font-size:11px;color:var(--muted);">User should change this after first login.</span>
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
+          <a href="{% url 'user_list' %}" class="btn btn-ghost">Cancel</a>
+          <button type="submit" class="btn btn-primary">Create User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

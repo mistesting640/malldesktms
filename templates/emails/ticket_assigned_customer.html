@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f9; margin: 0; padding: 0; }
+  .wrapper { max-width: 580px; margin: 32px auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+  .header { background: #0b0f1a; padding: 28px 32px; }
+  .header h1 { color: #fff; font-size: 22px; margin: 0; }
+  .header h1 span { color: #3b82f6; }
+  .banner { background: #eff6ff; padding: 14px 32px; font-size: 14px; font-weight: 600; color: #1d4ed8; border-bottom: 3px solid #3b82f6; }
+  .body { padding: 32px; color: #374151; }
+  .ticket-ref { font-size: 18px; font-weight: 800; color: #3b82f6; }
+  .footer { background: #f8fafc; padding: 20px 32px; text-align: center; color: #9ca3af; font-size: 12px; border-top: 1px solid #e2e8f0; }
+  p { line-height: 1.7; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="header"><h1>Mall<span>Desk</span></h1></div>
+  <div class="banner">🔄 Your Ticket is Now In Progress</div>
+  <div class="body">
+    <p>Dear <strong>{{ ticket.complainant_name }}</strong>,</p>
+    <p>Good news! Your ticket <span class="ticket-ref">{{ ticket.ticket_id }}</span> has been assigned to our team and is now being worked on.</p>
+    <p><strong>Assigned to:</strong> {{ ticket.assigned_to.full_name }} ({{ ticket.department.name }})</p>
+    <p>We will notify you once the issue has been resolved.</p>
+  </div>
+  <div class="footer">MallDesk Ticket Management System &nbsp;·&nbsp; Automated notification.</div>
+</div>
+</body>
+</html>

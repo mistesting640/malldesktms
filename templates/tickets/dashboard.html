@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — TMS{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div>
+    <h2>Dashboard</h2>
+    <div class="sub">Welcome back, {{ user.full_name }}</div>
+  </div>
+  <a href="{% url 'ticket_create' %}" class="btn btn-primary">+ New Ticket</a>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card blue">
+    <div class="stat-label">Total Tickets</div>
+    <div class="stat-value">{{ total }}</div>
+    <div class="stat-sub">All time</div>
+  </div>
+  <div class="stat-card amber">
+    <div class="stat-label">Open</div>
+    <div class="stat-value">{{ open }}</div>
+    <div class="stat-sub">Awaiting action</div>
+  </div>
+  <div class="stat-card cyan">
+    <div class="stat-label">In Progress</div>
+    <div class="stat-value">{{ in_progress }}</div>
+    <div class="stat-sub">Being worked on</div>
+  </div>
+  <div class="stat-card green">
+    <div class="stat-label">Resolved</div>
+    <div class="stat-value">{{ resolved }}</div>
+    <div class="stat-sub">Completed</div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <h3>Recent Tickets</h3>
+    <a href="{% url 'ticket_list' %}" class="btn btn-ghost btn-sm">View All →</a>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Ticket ID</th>
+        <th>Complainant</th>
+        <th>Mall</th>
+        <th>Department</th>
+        <th>Priority</th>
+        <th>Status</th>
+        <th>Due Date</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for ticket in recent %}
+      <tr>
+        <td><span class="ticket-id">{{ ticket.ticket_id }}</span></td>
+        <td>{{ ticket.complainant_name }}</td>
+        <td>{{ ticket.mall.name }}</td>
+        <td>{{ ticket.department.name }}</td>
+        <td><span class="badge badge-{{ ticket.priority }}"><span class="dot"></span>{{ ticket.get_priority_display }}</span></td>
+        <td><span class="badge badge-{{ ticket.ticket_status }}"><span class="dot"></span>{{ ticket.get_ticket_status_display }}</span></td>
+        <td class="{% if ticket.is_overdue %}overdue{% endif %}">
+          {{ ticket.due_date|default:"—" }}{% if ticket.is_overdue %} ⚠{% endif %}
+        </td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <a href="{% url 'ticket_detail' ticket.pk %}" class="btn btn-ghost btn-sm">View</a>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="8" style="text-align:center;color:var(--muted);padding:32px;">No tickets yet. <a href="{% url 'ticket_create' %}" style="color:var(--accent);">Create one →</a></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Users — MallDesk{% endblock %}
+{% block content %}
+<div class="topbar">
+  <div><h2>Manage Users</h2><div class="sub">Internal users are created from here. External users self-register.</div></div>
+  <a href="{% url 'create_internal_user' %}" class="btn btn-primary">+ Add Internal User</a>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+  <div class="card">
+    <div class="card-header">
+      <h3>Internal Users</h3>
+      <span style="font-size:12px;color:var(--muted);">{{ internal_users.count }} users</span>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Department</th><th>Role</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for u in internal_users %}
+        <tr>
+          <td>
+            <div>{{ u.full_name }}</div>
+            <div style="font-size:11px;color:var(--muted);">{{ u.email }}</div>
+          </td>
+          <td>{{ u.department.name|default:"—" }}</td>
+          <td>
+            <span style="background:rgba(59,130,246,.1);color:var(--accent);padding:3px 8px;border-radius:5px;font-size:11px;font-weight:600;">
+              {{ u.get_role_display }}
+            </span>
+          </td>
+          <td>
+            {% if u.is_active %}
+            <span class="badge badge-resolved">Active</span>
+            {% else %}
+            <span class="badge badge-closed">Inactive</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px;">No internal users yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h3>External Users</h3>
+      <span style="font-size:12px;color:var(--muted);">{{ external_users.count }} users</span>
+    </div>
+    <table>
+      <thead>
+        <tr><th>Name</th><th>Business</th><th>Mall</th><th>Tickets</th></tr>
+      </thead>
+      <tbody>
+        {% for u in external_users %}
+        <tr>
+          <td>
+            <div>{{ u.full_name }}</div>
+            <div style="font-size:11px;color:var(--muted);">{{ u.email }}</div>
+          </td>
+          <td>{{ u.business_name|default:"—" }}</td>
+          <td>{{ u.project.name|default:"—" }}</td>
+          <td>{{ u.created_tickets.count }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px;">No external users yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

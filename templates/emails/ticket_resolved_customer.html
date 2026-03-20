@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html><head><style>
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f6f9;margin:0;padding:0;}
+  .wrapper{max-width:580px;margin:32px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08);}
+  .header{background:#0b0f1a;padding:28px 32px;}
+  .header h1{color:#fff;font-size:22px;margin:0;}
+  .header h1 span{color:#3b82f6;}
+  .banner{background:#f0fdf4;padding:20px 32px;border-bottom:3px solid #10b981;text-align:center;}
+  .banner .check{font-size:40px;display:block;margin-bottom:6px;}
+  .banner h2{color:#065f46;font-size:18px;margin:0;}
+  .body{padding:32px;color:#374151;}
+  .res-box{background:#f0fdf4;border:1px solid #a7f3d0;border-radius:8px;padding:16px;margin:16px 0;font-size:14px;line-height:1.7;}
+  .stats{display:flex;gap:16px;margin:20px 0;}
+  .stat{flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;text-align:center;}
+  .stat-num{font-size:22px;font-weight:800;color:#3b82f6;}
+  .stat-label{font-size:12px;color:#6b7280;margin-top:2px;}
+  .footer{background:#f8fafc;padding:20px 32px;text-align:center;color:#9ca3af;font-size:12px;border-top:1px solid #e2e8f0;}
+  p{line-height:1.7;}
+</style></head>
+<body>
+<div class="wrapper">
+  <div class="header"><h1>Mall<span>Desk</span></h1></div>
+  <div class="banner">
+    <span class="check">✅</span>
+    <h2>Your Ticket Has Been Resolved</h2>
+  </div>
+  <div class="body">
+    <p>Dear <strong>{{ ticket.complainant_name }}</strong>,</p>
+    <p>We are pleased to inform you that your ticket <strong style="color:#3b82f6;">{{ ticket.ticket_id }}</strong> has been resolved.</p>
+
+    <div class="res-box">
+      <strong>Resolution:</strong><br>{{ ticket.resolution }}
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num">{{ ticket.resolution_time|default:"—" }}h</div>
+        <div class="stat-label">Resolution Time</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">{{ ticket.assigned_to.full_name|default:"Team"|truncatechars:10 }}</div>
+        <div class="stat-label">Resolved By</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">{{ ticket.resolved_on|date:"d M"|default:"—" }}</div>
+        <div class="stat-label">Resolved On</div>
+      </div>
+    </div>
+
+    <p style="font-size:13px;color:#6b7280;">If the issue persists or you are not satisfied, please raise a new ticket and reference <strong>{{ ticket.ticket_id }}</strong>.</p>
+    <p style="font-size:13px;color:#6b7280;">Thank you for using MallDesk.</p>
+  </div>
+  <div class="footer">MallDesk Ticket Management System &nbsp;·&nbsp; Automated notification.</div>
+</div>
+</body></html>
