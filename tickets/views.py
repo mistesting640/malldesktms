@@ -106,6 +106,18 @@ def ticket_detail(request, pk):
     whatsapp_number = getattr(django_settings, 'WHATSAPP_NOTIFY_NUMBER', '')
     ticket_url = request.build_absolute_uri(request.path)
 
+    # For public/guest view — flat list of fields to display
+    ticket_fields = [
+        ('Complainant Name',    ticket.complainant_name),
+        ('Company Name',        ticket.complainant_company or '—'),
+        ('Mall / Location',     ticket.mall.name),
+        ('Ticket Type',         ticket.get_ticket_type_display()),
+        ('Department',          ticket.department.name),
+        ('Sub Category',        ticket.sub_category.name if ticket.sub_category else '—'),
+        ('Due Date',            ticket.due_date or 'Not set'),
+        ('Created At',          ticket.created_at.strftime('%d %b %Y, %H:%M')),
+    ]
+
     return render(request, 'tickets/ticket_detail.html', {
         'ticket':          ticket,
         'updates':         ticket.updates.all(),
@@ -114,6 +126,7 @@ def ticket_detail(request, pk):
         'resolve_form':    resolve_form,
         'whatsapp_number': whatsapp_number,
         'ticket_url':      ticket_url,
+        'ticket_fields':   ticket_fields,
     })
 
 

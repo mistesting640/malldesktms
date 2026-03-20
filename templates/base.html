@@ -125,7 +125,6 @@
     <a href="{% url 'dashboard' %}" {% if request.resolver_match.url_name == 'dashboard' %}class="active"{% endif %}>📊 Dashboard</a>
     <a href="{% url 'ticket_list' %}" {% if 'ticket' in request.resolver_match.url_name %}class="active"{% endif %}>🎫 Tickets</a>
     <a href="{% url 'ticket_create' %}">+ New Ticket</a>
-
     {% if user.is_manager_or_admin %}
     <div class="nav-section">Administration</div>
     <a href="{% url 'user_list' %}">👥 Manage Users</a>
@@ -141,17 +140,19 @@
     <a href="{% url 'logout' %}" style="background:none;border:none;color:var(--muted);cursor:pointer;margin-left:auto;font-size:16px;text-decoration:none;" title="Logout">⏻</a>
   </div>
 </div>
-
 <div class="main">
   {% for msg in messages %}
-  <div class="alert alert-{% if msg.tags == 'error' %}error{% elif msg.tags == 'success' %}success{% else %}info{% endif %}">
-    {{ msg }}
-  </div>
+  <div class="alert alert-{% if msg.tags == 'error' %}error{% elif msg.tags == 'success' %}success{% else %}info{% endif %}">{{ msg }}</div>
   {% endfor %}
   {% block content %}{% endblock %}
 </div>
+
 {% else %}
 {% block auth_content %}{% endblock %}
+
+{# ── PUBLIC PAGES (no login required e.g. ticket view from WhatsApp link) ── #}
+{% block public_content %}{% endblock %}
+
 {% endif %}
 </body>
 </html>

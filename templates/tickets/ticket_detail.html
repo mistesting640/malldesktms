@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 {% block title %}{{ ticket.ticket_id }} — MallDesk{% endblock %}
+
 {% block content %}
+
 <div class="topbar">
   <div>
     <h2>{{ ticket.ticket_id }}</h2>
@@ -305,4 +307,236 @@ function submitWithWhatsApp(btn, action) {
 }
 </script>
 {% endif %}
+{% endblock %}
+
+{% block public_content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>{{ ticket.ticket_id }} — MallDesk</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'DM Sans',sans-serif;background:#0b0f1a;color:#e2e8f0;min-height:100vh;}
+
+  /* ── TOP BAR ── */
+  .topbar{background:#111827;border-bottom:1px solid #1f2d45;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:99;}
+  .logo{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;color:#e2e8f0;}
+  .logo span{color:#3b82f6;}
+  .login-btn{background:#3b82f6;color:#fff;padding:8px 16px;border-radius:8px;font-size:13px;text-decoration:none;font-weight:500;white-space:nowrap;}
+
+  /* ── GUEST NOTICE ── */
+  .notice{background:rgba(59,130,246,.1);border-bottom:1px solid rgba(59,130,246,.2);padding:10px 20px;font-size:13px;color:#93c5fd;display:flex;align-items:center;gap:8px;}
+
+  /* ── MAIN WRAPPER ── */
+  .wrap{max-width:720px;margin:0 auto;padding:20px 16px 40px;}
+
+  /* ── TICKET HEADER ── */
+  .ticket-header{margin-bottom:20px;}
+  .ticket-id{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:#3b82f6;margin-bottom:8px;}
+  .badges{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:6px;}
+  .badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;}
+  .badge-open{background:rgba(59,130,246,.12);color:#60a5fa;}
+  .badge-in_progress{background:rgba(245,158,11,.12);color:#fbbf24;}
+  .badge-resolved{background:rgba(16,185,129,.12);color:#34d399;}
+  .badge-closed{background:rgba(100,116,139,.12);color:#94a3b8;}
+  .badge-high,.badge-critical{background:rgba(239,68,68,.12);color:#f87171;}
+  .badge-medium{background:rgba(245,158,11,.12);color:#fbbf24;}
+  .badge-low{background:rgba(16,185,129,.12);color:#34d399;}
+  .dot{width:6px;height:6px;border-radius:50%;background:currentColor;display:inline-block;}
+  .overdue{color:#ef4444;font-weight:700;font-size:13px;}
+  .meta{font-size:12px;color:#64748b;margin-top:4px;}
+
+  /* ── CARDS ── */
+  .card{background:#111827;border:1px solid #1f2d45;border-radius:12px;overflow:hidden;margin-bottom:16px;}
+  .card-head{padding:14px 18px;border-bottom:1px solid #1f2d45;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;}
+  .card-body{padding:18px;}
+
+  /* ── INFO GRID ── */
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:400px){.info-grid{grid-template-columns:1fr;}}
+  .info-label{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+  .info-value{font-size:14px;font-weight:500;}
+
+  /* ── DESCRIPTION ── */
+  .desc-box{background:#1a2235;padding:14px;border-radius:8px;border:1px solid #1f2d45;line-height:1.7;font-size:14px;color:#cbd5e1;}
+  .resolution-box{background:rgba(16,185,129,.05);padding:14px;border-radius:8px;border:1px solid rgba(16,185,129,.2);line-height:1.7;font-size:14px;color:#a7f3d0;}
+
+  /* ── TIMELINE ── */
+  .timeline{display:flex;flex-direction:column;gap:0;}
+  .tl-item{display:flex;gap:12px;padding-bottom:18px;position:relative;}
+  .tl-item::before{content:'';position:absolute;left:14px;top:30px;bottom:0;width:1px;background:#1f2d45;}
+  .tl-item:last-child::before{display:none;}
+  .tl-icon{width:28px;height:28px;border-radius:50%;background:#1a2235;border:2px solid #1f2d45;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:2px;}
+  .tl-text{font-size:13px;line-height:1.5;}
+  .tl-meta{font-size:11px;color:#64748b;margin-top:2px;}
+
+  /* ── QUICK INFO ── */
+  .quick-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .quick-item{background:#1a2235;border-radius:8px;padding:12px;}
+  .quick-label{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;}
+  .quick-value{font-size:14px;font-weight:600;}
+
+  /* ── CTA BUTTON ── */
+  .cta-btn{display:block;background:#3b82f6;color:#fff;padding:14px;border-radius:10px;text-align:center;text-decoration:none;font-weight:600;font-size:15px;margin-top:20px;}
+  .cta-btn:active{background:#2563eb;}
+
+  /* ── STATUS COLORS ── */
+  .status-open{color:#60a5fa;}
+  .status-in_progress{color:#fbbf24;}
+  .status-resolved{color:#34d399;}
+  .status-closed{color:#94a3b8;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">Mall<span>Desk</span></div>
+  <a href="{% url 'login' %}?next={{ request.path }}" class="login-btn">Login →</a>
+</div>
+
+<div class="notice">
+  👁 Viewing as guest — <a href="{% url 'login' %}?next={{ request.path }}" style="color:#60a5fa;margin-left:4px;">Login to manage</a>
+</div>
+
+<div class="wrap">
+
+  <!-- Ticket Header -->
+  <div class="ticket-header">
+    <div class="ticket-id">{{ ticket.ticket_id }}</div>
+    <div class="badges">
+      <span class="badge badge-{{ ticket.ticket_status }}"><span class="dot"></span>{{ ticket.get_ticket_status_display }}</span>
+      <span class="badge badge-{{ ticket.priority }}"><span class="dot"></span>{{ ticket.get_priority_display }} Priority</span>
+      {% if ticket.is_overdue %}<span class="overdue">⚠ OVERDUE</span>{% endif %}
+    </div>
+    <div class="meta">{{ ticket.mall.name }} &nbsp;·&nbsp; {{ ticket.department.name }} &nbsp;·&nbsp; {{ ticket.created_at|date:"d M Y, H:i" }}</div>
+  </div>
+
+  <!-- Ticket Info -->
+  <div class="card">
+    <div class="card-head">Ticket Information</div>
+    <div class="card-body">
+      <div class="info-grid">
+        <div>
+          <div class="info-label">Complainant</div>
+          <div class="info-value">{{ ticket.complainant_name }}</div>
+        </div>
+        <div>
+          <div class="info-label">Company</div>
+          <div class="info-value">{{ ticket.complainant_company|default:"—" }}</div>
+        </div>
+        <div>
+          <div class="info-label">Ticket Type</div>
+          <div class="info-value">{{ ticket.get_ticket_type_display }}</div>
+        </div>
+        <div>
+          <div class="info-label">Sub Category</div>
+          <div class="info-value">{{ ticket.sub_category.name|default:"—" }}</div>
+        </div>
+        <div>
+          <div class="info-label">Assigned To</div>
+          <div class="info-value">{{ ticket.assigned_to.full_name|default:"Unassigned" }}</div>
+        </div>
+        <div>
+          <div class="info-label">Due Date</div>
+          <div class="info-value {% if ticket.is_overdue %}overdue{% endif %}">{{ ticket.due_date|default:"Not set" }}</div>
+        </div>
+      </div>
+
+      {% if ticket.complainant_address %}
+      <div style="margin-top:14px;">
+        <div class="info-label">Address</div>
+        <div class="info-value" style="font-size:13px;color:#94a3b8;margin-top:3px;">{{ ticket.complainant_address }}</div>
+      </div>
+      {% endif %}
+
+      <div style="margin-top:16px;">
+        <div class="info-label" style="margin-bottom:8px;">Description</div>
+        <div class="desc-box">{{ ticket.complaint_description }}</div>
+      </div>
+
+      {% if ticket.resolution %}
+      <div style="margin-top:16px;">
+        <div class="info-label" style="color:#10b981;margin-bottom:8px;">✓ Resolution</div>
+        <div class="resolution-box">{{ ticket.resolution }}</div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="card">
+    <div class="card-head">Quick Info</div>
+    <div class="card-body">
+      <div class="quick-grid">
+        <div class="quick-item">
+          <div class="quick-label">Status</div>
+          <div class="quick-value status-{{ ticket.ticket_status }}">{{ ticket.get_ticket_status_display }}</div>
+        </div>
+        <div class="quick-item">
+          <div class="quick-label">Priority</div>
+          <div class="quick-value">{{ ticket.get_priority_display }}</div>
+        </div>
+        <div class="quick-item">
+          <div class="quick-label">Updates</div>
+          <div class="quick-value">{{ updates.count }}</div>
+        </div>
+        {% if ticket.resolution_time %}
+        <div class="quick-item">
+          <div class="quick-label">Resolved In</div>
+          <div class="quick-value" style="color:#34d399;">{{ ticket.resolution_time }}h</div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Timeline -->
+  <div class="card">
+    <div class="card-head">Updates & Timeline</div>
+    <div class="card-body">
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-icon">📋</div>
+          <div>
+            <div class="tl-text">Ticket created by <strong>{{ ticket.created_by.full_name|default:ticket.complainant_name }}</strong></div>
+            <div class="tl-meta">{{ ticket.created_at|date:"d M Y, H:i" }}</div>
+          </div>
+        </div>
+        {% for update in updates %}
+        <div class="tl-item">
+          <div class="tl-icon">
+            {% if update.new_status == 'resolved' %}✅
+            {% elif update.new_status == 'in_progress' %}🔧
+            {% elif update.new_status == 'closed' %}🔒
+            {% elif update.note|slice:":10" == '[REMINDER]' %}🔔
+            {% else %}💬{% endif %}
+          </div>
+          <div>
+            <div class="tl-text">
+              {% if update.old_status and update.new_status %}
+                Status: <strong>{{ update.old_status|cut:"_"|title }}</strong> → <strong>{{ update.new_status|cut:"_"|title }}</strong>
+                {% if update.note %}<br>{{ update.note }}{% endif %}
+              {% else %}
+                {{ update.note }}
+              {% endif %}
+            </div>
+            <div class="tl-meta">{{ update.updated_by.full_name|default:"System" }} &nbsp;·&nbsp; {{ update.created_at|date:"d M Y, H:i" }}</div>
+          </div>
+        </div>
+        {% empty %}
+        <div style="color:#64748b;font-size:13px;">No updates yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Login CTA -->
+  <a href="{% url 'login' %}?next={{ request.path }}" class="cta-btn">🔐 Login to Manage This Ticket</a>
+
+</div>
+</body>
+</html>
 {% endblock %}
