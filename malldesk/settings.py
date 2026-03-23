@@ -121,13 +121,23 @@ EMAIL_HOST          = config('EMAIL_HOST',     default='smtp.dreamhost.com')
 EMAIL_PORT          = config('EMAIL_PORT',     default=587, cast=int)
 EMAIL_USE_TLS       = config('EMAIL_USE_TLS',  default=False, cast=bool)
 EMAIL_USE_SSL       = config('EMAIL_USE_SSL',  default=False, cast=bool)
-EMAIL_HOST_USER     = config('EMAIL_HOST_USER',     default='mis.accounts@vsquareservices.com')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='Malldesk2026')
-DEFAULT_FROM_EMAIL  = config('DEFAULT_FROM_EMAIL',  default='MallDesk <mis.accounts@vsquareservices.com>')
+EMAIL_HOST_USER     = config('EMAIL_HOST_USER',     default='mis.automation@vsquareservices.com')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='Legend@7570#Square')
+DEFAULT_FROM_EMAIL  = config('DEFAULT_FROM_EMAIL',  default='MallDesk <mis.automation@vsquareservices.com>')
 
 # ─── EMAIL RECIPIENTS ─────────────────────────────────────────────────────────
-MALLDESK_ADMIN_EMAILS = config('MALLDESK_ADMIN_EMAILS', default='mis@vsquareservices.com', cast=Csv())
-MALLDESK_CC_EMAILS    = config('MALLDESK_CC_EMAILS',    default='', cast=Csv())
+
+MALLDESK_ADMIN_EMAILS = config(
+    'MALLDESK_ADMIN_EMAILS',
+    default='mis.automation@vsquareservices.com',
+    cast=Csv()
+)
+
+MALLDESK_CC_EMAILS = config(
+    'MALLDESK_CC_EMAILS',
+    default='mis.automation@vsquareservices.com',
+    cast=Csv()
+)
 
 # For Railway — HTTP API (no SMTP needed)
 BREVO_API_KEY    = config('BREVO_API_KEY',    default='')
@@ -136,7 +146,7 @@ SENDGRID_API_KEY = config('SENDGRID_API_KEY', default='')
 # ─── WHATSAPP ─────────────────────────────────────────────────────────────────
 # Your number with country code — no + or spaces
 # Example India: 919876543210
-WHATSAPP_NOTIFY_NUMBER = config('WHATSAPP_NOTIFY_NUMBER', default='919876543210')
+WHATSAPP_NOTIFY_NUMBER = config('WHATSAPP_NOTIFY_NUMBER', default='917503020176')
 
 # ─── TICKET REMINDERS & ESCALATION ───────────────────────────────────────────
 TICKET_REMINDER_HOURS            = config('TICKET_REMINDER_HOURS',            default=2,  cast=float)
