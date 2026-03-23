@@ -8,4 +8,6 @@ urlpatterns = [
     # Also accessible at /accounts/users/ but named routes are at top-level urls.py
     path('users/',         views.user_list,            name='accounts_user_list'),
     path('users/create/',  views.create_internal_user, name='accounts_create_internal_user'),
+    path('users/<int:user_id>/remove/',     views.remove_user,     name='remove_user'),
+    path('users/<int:user_id>/reactivate/', views.reactivate_user, name='reactivate_user'),
 ]

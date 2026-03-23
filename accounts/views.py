@@ -1,10 +1,11 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
 from django.contrib.auth.views import LoginView
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .forms import ExternalRegisterForm, InternalUserCreateForm, LoginForm
-from .models import User
+from .models import User, UserRemovalLog
+from django.utils import timezone
 
 
 class CustomLoginView(LoginView):
@@ -54,9 +55,61 @@ def create_internal_user(request):
 def user_list(request):
     if not request.user.is_manager_or_admin:
         return redirect('/dashboard/')
-    internal_users = User.objects.filter(role__in=[User.INTERNAL, User.MANAGER])
-    external_users = User.objects.filter(role=User.EXTERNAL)
+    internal_users = User.objects.filter(role__in=[User.INTERNAL, User.MANAGER], is_active=True)
+    external_users = User.objects.filter(role=User.EXTERNAL, is_active=True)
+    removed_users  = UserRemovalLog.objects.select_related('user', 'removed_by').all()
     return render(request, 'accounts/user_list.html', {
         'internal_users': internal_users,
         'external_users': external_users,
+        'removed_users':  removed_users,
     })
+
+
+@login_required
+def remove_user(request, user_id):
+    if not request.user.is_manager_or_admin:
+        messages.error(request, "Permission denied.")
+        return redirect('user_list')
+
+    user = get_object_or_404(User, id=user_id)
+
+    if request.method == 'POST':
+        reason = request.POST.get('reason', '').strip()
+        if not reason:
+            messages.error(request, "Please provide a reason for removal.")
+            return redirect('user_list')
+
+        # Deactivate user
+        user.is_active = False
+        user.save()
+
+        # Log the removal
+        UserRemovalLog.objects.create(
+            user=user,
+            removed_by=request.user,
+            reason=reason,
+        )
+
+        messages.success(request, f"{user.full_name} has been deactivated.")
+    return redirect('user_list')
+
+
+@login_required
+def reactivate_user(request, user_id):
+    if not request.user.is_manager_or_admin:
+        messages.error(request, "Permission denied.")
+        return redirect('user_list')
+
+    user = get_object_or_404(User, id=user_id)
+    user.is_active = True
+    user.save()
+
+    # Mark latest log as reactivated
+    log = UserRemovalLog.objects.filter(user=user, reactivated=False).first()
+    if log:
+        log.reactivated    = True
+        log.reactivated_at = timezone.now()
+        log.save()
+
+    messages.success(request, f"{user.full_name} has been reactivated.")
+    return redirect('user_list')

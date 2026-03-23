@@ -1,74 +1,282 @@
 {% extends 'base.html' %}
-{% block title %}Users — MallDesk{% endblock %}
+{% block title %}Manage Users — MallDesk{% endblock %}
+
+{% block extra_css %}
+<style>
+.tab-bar{display:flex;gap:4px;background:var(--surface2);border-radius:10px;padding:4px;margin-bottom:24px;width:fit-content;}
+.tab-btn{padding:8px 20px;border-radius:7px;border:none;background:none;color:var(--muted);font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;white-space:nowrap;}
+.tab-btn.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* Remove modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-bg.open{display:flex;}
+.modal-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:460px;max-width:calc(100vw - 32px);padding:28px;}
+.modal-box h3{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;margin-bottom:6px;}
+.modal-box p{font-size:13px;color:var(--muted);margin-bottom:18px;}
+
+/* History toggle */
+.history-toggle{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--muted);padding:10px 0;user-select:none;}
+.history-toggle:hover{color:var(--text);}
+.toggle-arrow{transition:transform .2s;font-size:11px;}
+.toggle-arrow.open{transform:rotate(90deg);}
+.history-section{display:none;margin-top:8px;}
+.history-section.open{display:block;}
+
+@media(max-width:600px){.tab-bar{width:100%;} .tab-btn{flex:1;text-align:center;padding:8px 10px;}}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="topbar">
-  <div><h2>Manage Users</h2><div class="sub">Internal users are created from here. External users self-register.</div></div>
-  <a href="{% url 'create_internal_user' %}" class="btn btn-primary">+ Add Internal User</a>
+  <div><h2>Manage Users</h2><div class="sub">Internal and external user management</div></div>
+  <a href="{% url 'create_internal_user' %}" class="btn btn-primary">➕ Add Internal User</a>
 </div>
 
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+<!-- Tab Bar -->
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="switchTab('internal', this)">
+    👥 Internal Users <span style="background:var(--accent);color:#fff;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;">{{ internal_users.count }}</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('external', this)">
+    🏪 External Users <span style="background:var(--surface2);color:var(--muted);border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;border:1px solid var(--border);">{{ external_users.count }}</span>
+  </button>
+</div>
+
+<!-- ── INTERNAL USERS TAB ───────────────────────────────────────── -->
+<div class="tab-panel active" id="tab-internal">
   <div class="card">
     <div class="card-header">
       <h3>Internal Users</h3>
-      <span style="font-size:12px;color:var(--muted);">{{ internal_users.count }} users</span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:12px;color:var(--muted);">{{ internal_users.count }} active</span>
+        <a href="{% url 'export_users_csv' %}?type=internal" class="btn btn-ghost btn-sm">⬇ Export CSV</a>
+      </div>
     </div>
     <div class="table-wrap"><table>
       <thead>
-        <tr><th>Name</th><th>Department</th><th>Role</th><th>Status</th></tr>
+        <tr>
+          <th>Name</th>
+          <th>Department</th>
+          <th>Designation</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
       </thead>
       <tbody>
         {% for u in internal_users %}
         <tr>
           <td>
-            <div>{{ u.full_name }}</div>
+            <div style="font-weight:500;">{{ u.full_name }}</div>
             <div style="font-size:11px;color:var(--muted);">{{ u.email }}</div>
           </td>
           <td>{{ u.department.name|default:"—" }}</td>
+          <td>
+            {% if u.designation %}
+            <span style="background:rgba(6,182,212,.1);color:var(--accent2);padding:3px 8px;border-radius:5px;font-size:11px;font-weight:600;">
+              {{ u.designation.name }}
+            </span>
+            {% else %}—{% endif %}
+          </td>
           <td>
             <span style="background:rgba(59,130,246,.1);color:var(--accent);padding:3px 8px;border-radius:5px;font-size:11px;font-weight:600;">
               {{ u.get_role_display }}
             </span>
           </td>
+          <td><span class="badge badge-resolved">● Active</span></td>
           <td>
-            {% if u.is_active %}
-            <span class="badge badge-resolved">Active</span>
-            {% else %}
-            <span class="badge badge-closed">Inactive</span>
-            {% endif %}
+            <button class="btn btn-danger btn-sm"
+              data-userid="{{ u.id }}"
+              data-username="{{ u.full_name }}"
+              onclick="openRemoveModal(this)">
+              Remove
+            </button>
           </td>
         </tr>
         {% empty %}
-        <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px;">No internal users yet.</td></tr>
+        <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;">
+          No internal users. <a href="{% url 'create_internal_user' %}" style="color:var(--accent);">Add one →</a>
+        </td></tr>
         {% endfor %}
       </tbody>
     </table></div>
   </div>
 
+  <!-- Removed Users History Toggle -->
+  {% if removed_users %}
+  <div style="margin-top:20px;">
+    <div class="history-toggle" onclick="toggleHistory()">
+      <span class="toggle-arrow" id="history-arrow">▶</span>
+      <span>Removed Users History</span>
+      <span style="background:rgba(239,68,68,.12);color:#f87171;border-radius:10px;padding:1px 8px;font-size:11px;margin-left:4px;">
+        {{ removed_users.count }}
+      </span>
+    </div>
+    <div class="history-section" id="history-section">
+      <div class="card">
+        <div class="card-header">
+          <h3>Removal History</h3>
+          <a href="{% url 'export_users_csv' %}?type=removed" class="btn btn-ghost btn-sm">⬇ Export CSV</a>
+        </div>
+        <div class="table-wrap"><table>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Removed By</th>
+              <th>Reason</th>
+              <th>Removed On</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in removed_users %}
+            <tr>
+              <td>
+                <div style="font-weight:500;">{{ log.user.full_name }}</div>
+                <div style="font-size:11px;color:var(--muted);">{{ log.user.email }}</div>
+              </td>
+              <td>{{ log.removed_by.full_name|default:"System" }}</td>
+              <td style="max-width:200px;font-size:12px;color:var(--muted);">{{ log.reason }}</td>
+              <td style="font-size:12px;color:var(--muted);">{{ log.removed_at|date:"d M Y, H:i" }}</td>
+              <td>
+                {% if log.reactivated %}
+                <span class="badge badge-resolved">Reactivated</span>
+                <div style="font-size:10px;color:var(--muted);margin-top:2px;">{{ log.reactivated_at|date:"d M Y" }}</div>
+                {% else %}
+                <span class="badge badge-closed">Removed</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if not log.reactivated %}
+                <form method="post" action="{% url 'reactivate_user' log.user.id %}"
+                      data-name="{{ log.user.full_name }}" onsubmit="return confirm('Reactivate ' + this.dataset.name + '?')">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-success btn-sm">Reactivate</button>
+                </form>
+                {% else %}
+                <span style="font-size:12px;color:var(--muted);">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table></div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ── EXTERNAL USERS TAB ───────────────────────────────────────── -->
+<div class="tab-panel" id="tab-external">
   <div class="card">
     <div class="card-header">
       <h3>External Users</h3>
-      <span style="font-size:12px;color:var(--muted);">{{ external_users.count }} users</span>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:12px;color:var(--muted);">{{ external_users.count }} registered</span>
+        <a href="{% url 'export_users_csv' %}?type=external" class="btn btn-ghost btn-sm">⬇ Export CSV</a>
+      </div>
     </div>
     <div class="table-wrap"><table>
       <thead>
-        <tr><th>Name</th><th>Business</th><th>Mall</th><th>Tickets</th></tr>
+        <tr><th>Name</th><th>Business / Shop</th><th>Mall</th><th>Mobile</th><th>Tickets</th><th>Action</th></tr>
       </thead>
       <tbody>
         {% for u in external_users %}
         <tr>
           <td>
-            <div>{{ u.full_name }}</div>
+            <div style="font-weight:500;">{{ u.full_name }}</div>
             <div style="font-size:11px;color:var(--muted);">{{ u.email }}</div>
           </td>
           <td>{{ u.business_name|default:"—" }}</td>
           <td>{{ u.project.name|default:"—" }}</td>
-          <td>{{ u.created_tickets.count }}</td>
+          <td style="font-size:12px;">{{ u.mobile|default:"—" }}</td>
+          <td>
+            <span style="background:rgba(59,130,246,.1);color:var(--accent);padding:3px 8px;border-radius:5px;font-size:12px;font-weight:600;">
+              {{ u.created_tickets.count }}
+            </span>
+          </td>
+          <td>
+            <button class="btn btn-danger btn-sm"
+              data-userid="{{ u.id }}"
+              data-username="{{ u.full_name }}"
+              onclick="openRemoveModal(this)">
+              Remove
+            </button>
+          </td>
         </tr>
         {% empty %}
-        <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:24px;">No external users yet.</td></tr>
+        <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;">No external users registered yet.</td></tr>
         {% endfor %}
       </tbody>
     </table></div>
   </div>
 </div>
+
+<!-- ── REMOVE USER MODAL ────────────────────────────────────────── -->
+<div class="modal-bg" id="removeModal">
+  <div class="modal-box">
+    <h3>Remove User</h3>
+    <p id="removeModalSubtitle">This will deactivate the user. You can reactivate them later.</p>
+    <form method="post" id="removeForm">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>Reason for Removal *</label>
+        <textarea name="reason" class="form-input" rows="3"
+          placeholder="e.g. Employee resigned, Contract ended, Policy violation…"
+          required style="resize:vertical;"></textarea>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button type="submit" class="btn btn-danger" style="flex:1;justify-content:center;">
+          Confirm Remove
+        </button>
+        <button type="button" class="btn btn-ghost" onclick="closeRemoveModal()" style="flex:1;justify-content:center;">
+          Cancel
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function openRemoveModal(btn) {
+  const userId   = btn.dataset.userid;
+  const userName = btn.dataset.username;
+  document.getElementById('removeModalSubtitle').textContent =
+    'Remove ' + userName + '? This will deactivate their account. You can reactivate them later from the history.';
+  document.getElementById('removeForm').action = '/users/' + userId + '/remove/';
+  document.getElementById('removeModal').classList.add('open');
+}
+
+function closeRemoveModal() {
+  document.getElementById('removeModal').classList.remove('open');
+}
+
+function toggleHistory() {
+  const section = document.getElementById('history-section');
+  const arrow   = document.getElementById('history-arrow');
+  section.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+// Close modal on background click
+document.getElementById('removeModal').addEventListener('click', function(e){
+  if (e.target === this) closeRemoveModal();
+});
+
+// Close on Escape
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape') closeRemoveModal();
+});
+</script>
 {% endblock %}

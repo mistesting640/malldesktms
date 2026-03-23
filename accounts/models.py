@@ -50,6 +50,10 @@ class User(AbstractBaseUser, PermissionsMixin):
         'tickets.Department', null=True, blank=True,
         on_delete=models.SET_NULL, related_name='members'
     )
+    designation     = models.ForeignKey(
+        'tickets.Designation', null=True, blank=True,
+        on_delete=models.SET_NULL, related_name='users'
+    )
 
     is_active       = models.BooleanField(default=True)
     is_staff        = models.BooleanField(default=False)
@@ -79,3 +83,24 @@ class User(AbstractBaseUser, PermissionsMixin):
     @property
     def is_manager_or_admin(self):
         return self.role in [self.MANAGER, self.ADMIN]
+
+
+class UserRemovalLog(models.Model):
+    """Tracks when and why a user was deactivated."""
+    user        = models.ForeignKey(
+        'accounts.User', on_delete=models.CASCADE, related_name='removal_logs'
+    )
+    removed_by  = models.ForeignKey(
+        'accounts.User', on_delete=models.SET_NULL, null=True,
+        related_name='removals_done'
+    )
+    reason      = models.TextField()
+    removed_at  = models.DateTimeField(auto_now_add=True)
+    reactivated = models.BooleanField(default=False)
+    reactivated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-removed_at']
+
+    def __str__(self):
+        return f"{self.user.full_name} removed on {self.removed_at:%d %b %Y}"

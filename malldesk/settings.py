@@ -1,18 +1,37 @@
 from pathlib import Path
-from decouple import config, Csv
-import dj_database_url
 import os
+
+try:
+    from decouple import config, Csv
+except ImportError:
+    def config(key, default=None, cast=None):
+        val = os.environ.get(key, default)
+        if cast and val is not None:
+            if cast == bool:
+                return str(val).lower() in ('true', '1', 'yes')
+            try:
+                return cast(val)
+            except Exception:
+                return val
+        return val
+    def Csv():
+        def _cast(val):
+            if not val:
+                return []
+            return [v.strip() for v in val.split(',') if v.strip()]
+        return _cast
+
+try:
+    import dj_database_url
+except ImportError:
+    dj_database_url = None
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-in-production')
-
-DEBUG = config('DEBUG', default=False, cast=bool)
-
+DEBUG      = config('DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*', cast=Csv())
-
-# Required for Railway/Render — tells Django to trust POST requests from your domain
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost', cast=Csv())
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='http://localhost,http://127.0.0.1', cast=Csv())
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -27,7 +46,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',   # ← serves static files on Render
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -57,13 +76,9 @@ TEMPLATES = [
 WSGI_APPLICATION = 'malldesk.wsgi.application'
 
 # ─── DATABASE ─────────────────────────────────────────────────────────────────
-# Uses DATABASE_URL env var on Render (PostgreSQL)
-# Falls back to SQLite for local development
 DATABASE_URL = config('DATABASE_URL', default=None)
-if DATABASE_URL:
-    DATABASES = {
-        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
-    }
+if DATABASE_URL and dj_database_url:
+    DATABASES = {'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)}
 else:
     DATABASES = {
         'default': {
@@ -82,46 +97,52 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'Asia/Kolkata'
-USE_I18N = True
-USE_TZ = True
+TIME_ZONE     = 'Asia/Kolkata'
+USE_I18N      = True
+USE_TZ        = True
 
-# ─── STATIC FILES ─────────────────────────────────────────────────────────────
-STATIC_URL = '/static/'
+STATIC_URL       = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT      = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-MEDIA_URL = '/media/'
+MEDIA_URL  = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-LOGIN_URL = '/accounts/login/'
+LOGIN_URL          = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
 
 # ─── EMAIL ────────────────────────────────────────────────────────────────────
+# Local: uses custom SSL backend via DreamHost SMTP
+# Railway: set BREVO_API_KEY env var instead — SMTP is blocked there
 EMAIL_BACKEND       = config('EMAIL_BACKEND', default='malldesk.custom_email_backend.SSLBypassEmailBackend')
-EMAIL_HOST          = config('EMAIL_HOST', default='smtp.dreamhost.com')
-EMAIL_PORT          = config('EMAIL_PORT', default=465, cast=int)
-EMAIL_USE_TLS       = config('EMAIL_USE_TLS', default=False, cast=bool)
-EMAIL_USE_SSL       = config('EMAIL_USE_SSL', default=False, cast=bool)
-EMAIL_HOST_USER     = config('EMAIL_HOST_USER', default='')
-EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL  = config('DEFAULT_FROM_EMAIL', default='MallDesk <mis.accounts@vsquareservices.com>')
+EMAIL_HOST          = config('EMAIL_HOST',     default='smtp.dreamhost.com')
+EMAIL_PORT          = config('EMAIL_PORT',     default=587, cast=int)
+EMAIL_USE_TLS       = config('EMAIL_USE_TLS',  default=False, cast=bool)
+EMAIL_USE_SSL       = config('EMAIL_USE_SSL',  default=False, cast=bool)
+EMAIL_HOST_USER     = config('EMAIL_HOST_USER',     default='mis.accounts@vsquareservices.com')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='Malldesk2026')
+DEFAULT_FROM_EMAIL  = config('DEFAULT_FROM_EMAIL',  default='MallDesk <mis.accounts@vsquareservices.com>')
 
-# ─── WHO GETS EMAILS ──────────────────────────────────────────────────────────
+# ─── EMAIL RECIPIENTS ─────────────────────────────────────────────────────────
 MALLDESK_ADMIN_EMAILS = config('MALLDESK_ADMIN_EMAILS', default='mis@vsquareservices.com', cast=Csv())
-MALLDESK_CC_EMAILS    = config('MALLDESK_CC_EMAILS', default='', cast=Csv())
+MALLDESK_CC_EMAILS    = config('MALLDESK_CC_EMAILS',    default='', cast=Csv())
+
+# For Railway — HTTP API (no SMTP needed)
+BREVO_API_KEY    = config('BREVO_API_KEY',    default='')
+SENDGRID_API_KEY = config('SENDGRID_API_KEY', default='')
 
 # ─── WHATSAPP ─────────────────────────────────────────────────────────────────
-WHATSAPP_NOTIFY_NUMBER = config('WHATSAPP_NOTIFY_NUMBER', default='')
+# Your number with country code — no + or spaces
+# Example India: 919876543210
+WHATSAPP_NOTIFY_NUMBER = config('WHATSAPP_NOTIFY_NUMBER', default='919876543210')
 
-# ─── TICKET REMINDERS ─────────────────────────────────────────────────────────
-TICKET_REMINDER_HOURS          = config('TICKET_REMINDER_HOURS', default=2, cast=float)
-TICKET_REMINDER_CHECK_INTERVAL = config('TICKET_REMINDER_CHECK_INTERVAL', default=30, cast=int)
-TICKET_REMINDER_MAX            = config('TICKET_REMINDER_MAX', default=5, cast=int)
+# ─── TICKET REMINDERS & ESCALATION ───────────────────────────────────────────
+TICKET_REMINDER_HOURS            = config('TICKET_REMINDER_HOURS',            default=2,  cast=float)
+TICKET_REMINDER_CHECK_INTERVAL   = config('TICKET_REMINDER_CHECK_INTERVAL',   default=30, cast=int)
+TICKET_REMINDER_MAX              = config('TICKET_REMINDER_MAX',              default=5,  cast=int)
+TICKET_ESCALATE_AFTER_REMINDERS  = config('TICKET_ESCALATE_AFTER_REMINDERS',  default=3,  cast=int)
 
 # ─── LOGGING ──────────────────────────────────────────────────────────────────
 LOGGING = {

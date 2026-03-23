@@ -1,105 +1,452 @@
 {% extends 'base.html' %}
 {% block title %}{{ title }} — MallDesk{% endblock %}
-{% block extra_css %}<style>@media(max-width:600px){.form-row{grid-template-columns:1fr!important;}}</style>{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+<style>
+@media(max-width:600px){.form-row{grid-template-columns:1fr!important;}}
+
+/* Select2 dark theme */
+.select2-container--default .select2-selection--single{
+  background:var(--surface2);border:1px solid var(--border);border-radius:8px;
+  height:42px;display:flex;align-items:center;padding:0 12px;
+}
+.select2-container--default .select2-selection--single .select2-selection__rendered{
+  color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:0;line-height:42px;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow{
+  height:42px;right:8px;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow b{
+  border-color:var(--muted) transparent transparent;
+}
+.select2-container--default.select2-container--open .select2-selection--single .select2-selection__arrow b{
+  border-color:transparent transparent var(--muted);
+}
+.select2-dropdown{
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  box-shadow:0 8px 24px rgba(0,0,0,.4);
+}
+.select2-container--default .select2-search--dropdown .select2-search__field{
+  background:var(--surface2);border:1px solid var(--border);border-radius:6px;
+  color:var(--text);font-family:'DM Sans',sans-serif;padding:8px 10px;outline:none;
+}
+.select2-container--default .select2-results__option{
+  padding:9px 14px;font-size:13.5px;color:var(--muted);
+}
+.select2-container--default .select2-results__option--highlighted{
+  background:var(--surface2);color:var(--text);
+}
+.select2-container--default .select2-results__option[aria-selected=true]{
+  background:rgba(59,130,246,.1);color:var(--accent);
+}
+.select2-container{width:100%!important;}
+.select2-container--default .select2-selection--single .select2-selection__placeholder{
+  color:var(--muted);
+}
+
+/* Loading spinner */
+.field-loading{display:none;font-size:12px;color:var(--muted);margin-top:4px;}
+.field-loading.show{display:block;}
+
+/* Auto-filled fields */
+.auto-filled{background:rgba(59,130,246,.05)!important;border-color:var(--accent)!important;}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="topbar">
   <div>
     <h2>{{ title }}</h2>
-    <div class="sub">{% if ticket %}Ticket {{ ticket.ticket_id }}{% else %}Fill in the details below{% endif %}</div>
+    <div class="sub">Fill in the details below</div>
   </div>
-  <a href="{% url 'ticket_list' %}" class="btn btn-ghost">← Cancel</a>
+  <a href="{% url 'ticket_list' %}" class="btn btn-ghost">← Back</a>
 </div>
 
-<div style="max-width:720px;">
-  <div class="card">
-    <div class="card-body">
-      <form method="post">
-        {% csrf_token %}
+<div style="max-width:780px;">
+<div class="card">
+  <div class="card-body">
+  <form method="post">
+    {% csrf_token %}
 
-        {% if form.non_field_errors %}
-        <div class="alert alert-error">{{ form.non_field_errors }}</div>
-        {% endif %}
-
-        {% if not ticket %}
-        <!-- Create-only fields -->
-        <div class="form-row">
-          <div class="form-group">
-            <label>Mall / Location *</label>
-            {{ form.mall }}
-            {% if form.mall.errors %}<span style="color:var(--danger);font-size:12px;">{{ form.mall.errors.0 }}</span>{% endif %}
-          </div>
-          <div class="form-group">
-            <label>Ticket Type *</label>
-            {{ form.ticket_type }}
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>Department *</label>
-            {{ form.department }}
-            {% if form.department.errors %}<span style="color:var(--danger);font-size:12px;">{{ form.department.errors.0 }}</span>{% endif %}
-          </div>
-          <div class="form-group">
-            <label>Sub Category</label>
-            {{ form.sub_category }}
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>Priority *</label>
-            {{ form.priority }}
-          </div>
-          <div class="form-group">
-            <label>Due Date</label>
-            {{ form.due_date }}
-          </div>
-        </div>
-
-        <hr style="border:none;border-top:1px solid var(--border);margin:20px 0;">
-        <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:16px;text-transform:uppercase;letter-spacing:.5px;">Complainant Details</div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>Complainant Name *</label>
-            {{ form.complainant_name }}
-            {% if form.complainant_name.errors %}<span style="color:var(--danger);font-size:12px;">{{ form.complainant_name.errors.0 }}</span>{% endif %}
-          </div>
-          <div class="form-group">
-            <label>Company / Shop Name</label>
-            {{ form.complainant_company }}
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Address</label>
-          {{ form.complainant_address }}
-        </div>
-        {% endif %}
-
-        <!-- Description (both create and edit) -->
-        <div class="form-group">
-          <label>Complaint Description *</label>
-          {{ form.complaint_description }}
-          {% if form.complaint_description.errors %}<span style="color:var(--danger);font-size:12px;">{{ form.complaint_description.errors.0 }}</span>{% endif %}
-        </div>
-
-        {% if ticket %}
-        <div class="form-group">
-          <label>Address</label>
-          {{ form.complainant_address }}
-        </div>
-        {% endif %}
-
-        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
-          <a href="{% url 'ticket_list' %}" class="btn btn-ghost">Cancel</a>
-          <button type="submit" class="btn btn-primary">
-            {% if ticket %}Save Changes{% else %}Submit Ticket{% endif %}
-          </button>
-        </div>
-      </form>
+    {% if form.errors %}
+    <div class="alert alert-error" style="margin-bottom:20px;">
+      Please fix the errors below.
     </div>
+    {% endif %}
+
+    <!-- ── SECTION 1: Mall & Shop ── -->
+    <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);">
+      📍 Mall & Shop
+    </div>
+
+    <div class="form-row" style="margin-bottom:16px;">
+      <div class="form-group">
+        <label>Mall / Location *</label>
+        <select name="mall" id="id_mall" class="form-input select2-mall" required>
+          <option value="">— Select Mall —</option>
+          {% for mall in form.mall.field.queryset %}
+          <option value="{{ mall.id }}" {% if form.mall.value == mall.id|stringformat:"s" %}selected{% endif %}>
+            {{ mall.name }} — {{ mall.location }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Shop *</label>
+        <select name="shop" id="id_shop" class="form-input" disabled required>
+          <option value="">— Select Mall first —</option>
+        </select>
+        <div class="field-loading" id="shop-loading">⏳ Loading shops…</div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 2: Complainant ── -->
+    <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);">
+      👤 Complainant
+    </div>
+
+    <div class="form-row" style="margin-bottom:16px;">
+      <div class="form-group">
+        <label>Complainant Type *</label>
+        <select id="id_contact_type" class="form-input" disabled>
+          <option value="">— Select Shop first —</option>
+        </select>
+        <div class="field-loading" id="type-loading">⏳ Loading types…</div>
+      </div>
+
+      <div class="form-group">
+        <label>Complainant Name *</label>
+        <select name="complainant_contact_id" id="id_contact_name" class="form-input" disabled>
+          <option value="">— Select Type first —</option>
+        </select>
+        <div class="field-loading" id="name-loading">⏳ Loading names…</div>
+        <!-- Hidden fields auto-filled from selected contact -->
+        <input type="hidden" name="complainant_name"    id="h_complainant_name">
+        <input type="hidden" name="complainant_company" id="h_complainant_company">
+        <input type="hidden" name="complainant_address" id="h_complainant_address">
+      </div>
+    </div>
+
+    <!-- Auto-filled info display -->
+    <div id="contact-info-box" style="display:none;background:var(--surface2);border:1px solid var(--accent);border-radius:8px;padding:14px;margin-bottom:16px;">
+      <div style="font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">✓ Contact Details (Auto-filled)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;">
+        <div><span style="color:var(--muted);">Name: </span><span id="info-name">—</span></div>
+        <div><span style="color:var(--muted);">Mobile: </span><span id="info-mobile">—</span></div>
+        <div><span style="color:var(--muted);">Email: </span><span id="info-email">—</span></div>
+        <div><span style="color:var(--muted);">Shop: </span><span id="info-shop">—</span></div>
+      </div>
+    </div>
+
+    <!-- ── SECTION 3: Ticket Details ── -->
+    <div style="font-family:'Syne',sans-serif;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);">
+      🎫 Ticket Details
+    </div>
+
+    <div class="form-row" style="margin-bottom:16px;">
+      <div class="form-group">
+        <label>Ticket Type *</label>
+        <select name="ticket_type" id="id_ticket_type" class="form-input" required>
+          {% for val, label in form.ticket_type.field.choices %}
+          <option value="{{ val }}" {% if form.ticket_type.value == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Priority *</label>
+        <select name="priority" class="form-input" required>
+          {% for val, label in form.priority.field.choices %}
+          <option value="{{ val }}" {% if form.priority.value == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="form-row" style="margin-bottom:16px;">
+      <div class="form-group">
+        <label>Department *</label>
+        <select name="department" id="id_department" class="form-input select2-basic" required>
+          <option value="">— Select Department —</option>
+          {% for dept in form.department.field.queryset %}
+          <option value="{{ dept.id }}" {% if form.department.value == dept.id|stringformat:"s" %}selected{% endif %}>{{ dept.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Sub Category</label>
+        <select name="sub_category" id="id_sub_category" class="form-input" disabled>
+          <option value="">— Select Department first —</option>
+        </select>
+        <div class="field-loading" id="sub-loading">⏳ Loading…</div>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-bottom:16px;">
+      <label>Due Date</label>
+      <input type="date" name="due_date" class="form-input" value="{{ form.due_date.value|default:'' }}" style="max-width:240px;">
+    </div>
+
+    <div class="form-group" style="margin-bottom:24px;">
+      <label>Complaint Description *</label>
+      <textarea name="complaint_description" class="form-input" rows="4"
+        placeholder="Describe the issue in detail…" required>{{ form.complaint_description.value|default:'' }}</textarea>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button type="submit" class="btn btn-primary" id="submit-btn">Submit Ticket</button>
+      <a href="{% url 'ticket_list' %}" class="btn btn-ghost">Cancel</a>
+    </div>
+
+  </form>
   </div>
 </div>
+</div>
+
+<!-- jQuery + Select2 -->
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+// Store contacts data in JS — avoids data-attr loss when Select2 rebuilds DOM
+var contactsData = {};
+
+const AJAX_SHOPS    = "{% url 'ajax_get_shops' %}";
+const AJAX_TYPES    = "{% url 'ajax_get_contact_types' %}";
+const AJAX_CONTACTS = "{% url 'ajax_get_contacts' %}";
+const AJAX_SUBCATS  = "{% url 'ajax_get_subcategories' %}";
+
+$(document).ready(function(){
+
+  // ── Init Select2 on static selects ─────────────────
+  $('#id_mall').select2({
+    placeholder: '— Select Mall —',
+    allowClear: true,
+    width: '100%'
+  });
+  $('#id_department, #id_ticket_type, [name="priority"], [name="sub_category"]').select2({
+    placeholder: '— Select —',
+    allowClear: true,
+    width: '100%'
+  });
+
+  // ── STEP 1: Mall selected → load shops ─────────────
+  $('#id_mall').on('select2:select select2:unselect', function(){
+    const mallId = $(this).val();
+    resetShops();
+    resetTypes();
+    resetNames();
+    if (!mallId) return;
+
+    showLoading('shop-loading');
+    fetch(AJAX_SHOPS + '?mall_id=' + mallId)
+      .then(r => r.json())
+      .then(data => {
+        hideLoading('shop-loading');
+        const $shop = $('#id_shop');
+        $shop.empty().append('<option value="">— Select Shop —</option>');
+
+        if (data.shops.length === 0) {
+          $shop.append('<option disabled>No shops found for this mall</option>');
+          return;
+        }
+
+        data.shops.forEach(function(s){
+          const label = s.shop_number + ' — ' + s.shop_name + (s.floor ? ' (' + s.floor + ')' : '');
+          $shop.append(new Option(label, s.id));
+        });
+
+        $shop.prop('disabled', false);
+
+        // Destroy old Select2 if exists and re-init
+        if ($shop.hasClass('select2-hidden-accessible')) $shop.select2('destroy');
+        $shop.select2({placeholder: '— Select Shop —', allowClear: true, width: '100%'});
+
+        // Listen for shop selection via Select2
+        $shop.off('select2:select select2:unselect').on('select2:select select2:unselect', onShopChange);
+      })
+      .catch(function(err){
+        hideLoading('shop-loading');
+        console.error('Shop fetch failed:', err);
+        alert('Failed to load shops. Please try again.');
+      });
+  });
+
+  // ── STEP 2: Shop selected → load contact types ──────
+  function onShopChange(){
+    const shopId = $('#id_shop').val();
+    resetTypes();
+    resetNames();
+    if (!shopId) return;
+
+    $('#info-shop').text($('#id_shop option:selected').text());
+    showLoading('type-loading');
+
+    fetch(AJAX_TYPES + '?shop_id=' + shopId)
+      .then(r => r.json())
+      .then(data => {
+        hideLoading('type-loading');
+        const $type = $('#id_contact_type');
+        $type.empty().append('<option value="">— Select Type —</option>');
+
+        if (data.types.length === 0) {
+          $type.append('<option disabled>No contacts for this shop</option>');
+          return;
+        }
+
+        data.types.forEach(function(t){
+          $type.append(new Option(t.label, t.value));
+        });
+
+        $type.prop('disabled', false);
+      })
+      .catch(function(err){
+        hideLoading('type-loading');
+        console.error('Type fetch failed:', err);
+      });
+  }
+
+  // ── STEP 3: Contact type selected → load names ──────
+  $(document).on('change', '#id_contact_type', function(){
+    const contactType = $(this).val();
+    const shopId      = $('#id_shop').val();
+    resetNames();
+    if (!contactType || !shopId) return;
+
+    showLoading('name-loading');
+
+    fetch(AJAX_CONTACTS + '?shop_id=' + shopId + '&contact_type=' + contactType)
+      .then(r => r.json())
+      .then(data => {
+        hideLoading('name-loading');
+        contactsData = {}; // reset stored contacts
+        const $name = $('#id_contact_name');
+
+        // Destroy old Select2 if exists
+        if ($name.hasClass('select2-hidden-accessible')) $name.select2('destroy');
+        $name.empty().append('<option value="">— Search or select name —</option>');
+
+        if (data.contacts.length === 0) {
+          $name.append('<option disabled>No contacts found</option>');
+          return;
+        }
+
+        data.contacts.forEach(function(c){
+          // Store full contact data by id
+          contactsData[c.id] = c;
+          $name.append(new Option(c.name, c.id));
+        });
+
+        $name.prop('disabled', false);
+        // Init Select2 with search
+        $name.select2({
+          placeholder: '— Search or select name —',
+          allowClear: true,
+          width: '100%'
+        });
+        // Listen for name selection
+        $name.off('select2:select select2:unselect').on('select2:select', onNameSelect).on('select2:unselect', onNameClear);
+      })
+      .catch(function(err){
+        hideLoading('name-loading');
+        console.error('Contacts fetch failed:', err);
+      });
+  });
+
+  // ── STEP 4: Name selected → auto-fill info ──────────
+  function onNameSelect(e){
+    const contactId = e.params.data.id;
+    const contact   = contactsData[contactId];
+    if (!contact) return;
+
+    const shopText = $('#id_shop option:selected').text();
+    const mallText = $('#id_mall option:selected').text().split('—')[0].trim();
+
+    // Fill hidden fields
+    $('#h_complainant_name').val(contact.name);
+    $('#h_complainant_company').val(shopText.split('—')[1]?.trim() || shopText);
+    $('#h_complainant_address').val(mallText + ', Shop: ' + shopText.split('—')[0].trim());
+
+    // Show info card
+    $('#info-name').text(contact.name);
+    $('#info-mobile').text(contact.mobile || '—');
+    $('#info-email').text(contact.email  || '—');
+    $('#contact-info-box').show();
+  }
+
+  function onNameClear(){
+    $('#h_complainant_name').val('');
+    $('#h_complainant_company').val('');
+    $('#h_complainant_address').val('');
+    $('#contact-info-box').hide();
+  }
+
+  // ── Department → Sub-category cascade ───────────────
+  $('#id_department').on('select2:select select2:unselect', function(){
+    const deptId = $(this).val();
+    const $sub   = $('#id_sub_category');
+
+    // Destroy Select2 if exists
+    if ($sub.hasClass('select2-hidden-accessible')) $sub.select2('destroy');
+    $sub.empty().append('<option value="">— Select Department first —</option>').prop('disabled', true);
+
+    if (!deptId) return;
+
+    showLoading('sub-loading');
+    fetch(AJAX_SUBCATS + '?dept_id=' + deptId)
+      .then(r => r.json())
+      .then(data => {
+        hideLoading('sub-loading');
+        if (data.subcategories.length === 0) {
+          $sub.append('<option disabled>No sub-categories found</option>');
+          return;
+        }
+        $sub.empty().append('<option value="">— Optional —</option>');
+        data.subcategories.forEach(function(s){
+          $sub.append(new Option(s.name, s.id));
+        });
+        $sub.prop('disabled', false);
+        $sub.select2({placeholder: '— Select Sub-Category —', allowClear: true, width: '100%'});
+      })
+      .catch(function(err){
+        hideLoading('sub-loading');
+        console.error('Subcategory fetch failed:', err);
+      });
+  });
+
+  // ── Form submit validation ───────────────────────────
+  $('form').on('submit', function(e){
+    if (!$('#h_complainant_name').val()) {
+      e.preventDefault();
+      alert('Please select a complainant name from the dropdown.');
+      $('#id_contact_name').focus();
+      return false;
+    }
+  });
+
+});
+
+// ── Helpers ──────────────────────────────────────────
+function resetShops(){
+  const $s = $('#id_shop');
+  if ($s.hasClass('select2-hidden-accessible')) $s.select2('destroy');
+  $s.empty().append('<option value="">— Select Mall first —</option>').prop('disabled', true);
+}
+function resetTypes(){
+  $('#id_contact_type').empty().append('<option value="">— Select Shop first —</option>').prop('disabled', true);
+  $('#info-shop').text('—');
+}
+function resetNames(){
+  const $n = $('#id_contact_name');
+  if ($n.hasClass('select2-hidden-accessible')) $n.select2('destroy');
+  $n.empty().append('<option value="">— Select Type first —</option>').prop('disabled', true);
+  $('#h_complainant_name').val('');
+  $('#h_complainant_company').val('');
+  $('#h_complainant_address').val('');
+  $('#contact-info-box').hide();
+}
+function showLoading(id){ document.getElementById(id).classList.add('show'); }
+function hideLoading(id){ document.getElementById(id).classList.remove('show'); }
+</script>
 {% endblock %}

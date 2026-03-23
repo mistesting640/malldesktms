@@ -16,6 +16,44 @@ class Mall(models.Model):
         return self.name
 
 
+
+class Shop(models.Model):
+    mall        = models.ForeignKey(Mall, on_delete=models.CASCADE, related_name='shops')
+    shop_number = models.CharField(max_length=50, help_text="e.g. A-101, GF-12")
+    shop_name   = models.CharField(max_length=200)
+    floor       = models.CharField(max_length=50, blank=True)
+    is_active   = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['shop_number']
+        unique_together = ['mall', 'shop_number']
+
+    def __str__(self):
+        return f"{self.shop_number} — {self.shop_name} ({self.mall.name})"
+
+
+class ShopContact(models.Model):
+    OWNER  = 'owner'
+    TENANT = 'tenant'
+    TYPE_CHOICES = [
+        (OWNER,  'Owner'),
+        (TENANT, 'Tenant'),
+    ]
+
+    shop         = models.ForeignKey(Shop, on_delete=models.CASCADE, related_name='contacts')
+    contact_type = models.CharField(max_length=10, choices=TYPE_CHOICES, default=TENANT)
+    name         = models.CharField(max_length=200)
+    mobile       = models.CharField(max_length=20, blank=True)
+    email        = models.EmailField(blank=True)
+    is_active    = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return f"{self.name} ({self.get_contact_type_display()}) — {self.shop.shop_number}"
+
+
 class Department(models.Model):
     mall       = models.ForeignKey(Mall, on_delete=models.CASCADE, related_name='departments', null=True, blank=True,
                                    help_text="Leave blank to apply to all malls")
@@ -42,6 +80,39 @@ class SubCategory(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.department.name})"
+
+
+
+class Designation(models.Model):
+    """
+    Job designations with escalation hierarchy.
+    e.g. Technician (level 1) → Sr Technician (level 2) → Supervisor (level 3) → Manager (level 4)
+    Higher level_order = higher rank = escalates to this designation.
+    """
+    name         = models.CharField(max_length=100)
+    department   = models.ForeignKey(Department, on_delete=models.CASCADE, related_name='designations',
+                                     null=True, blank=True, help_text="Leave blank for all departments")
+    level_order  = models.PositiveIntegerField(default=1,
+                   help_text="1=lowest (Technician), higher number = senior. Escalation goes to next higher level.")
+    is_active    = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['level_order', 'name']
+
+    def __str__(self):
+        return f"{self.name} (Level {self.level_order})"
+
+    def get_next_level(self, department=None):
+        """Return the next higher designation for escalation."""
+        qs = Designation.objects.filter(
+            level_order__gt=self.level_order,
+            is_active=True
+        )
+        if department:
+            qs = qs.filter(models.Q(department=department) | models.Q(department__isnull=True))
+        else:
+            qs = qs.filter(models.Q(department=self.department) | models.Q(department__isnull=True))
+        return qs.order_by('level_order').first()
 
 
 class Ticket(models.Model):
@@ -85,6 +156,7 @@ class Ticket(models.Model):
     ticket_id           = models.CharField(max_length=20, unique=True, editable=False)
 
     # Complainant info
+    shop                = models.ForeignKey('Shop', on_delete=models.SET_NULL, null=True, blank=True, related_name='tickets')
     complainant_name    = models.CharField(max_length=200)
     complainant_company = models.CharField(max_length=200, blank=True)
     complainant_address = models.TextField(blank=True)
@@ -106,6 +178,13 @@ class Ticket(models.Model):
                                             related_name='created_tickets')
     assigned_to         = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
                                             related_name='assigned_tickets')
+
+    # Escalation
+    escalated           = models.BooleanField(default=False)
+    escalated_at        = models.DateTimeField(null=True, blank=True)
+    escalated_from      = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                            related_name='escalated_tickets')
+    escalation_count    = models.PositiveIntegerField(default=0)
 
     # Dates
     created_at          = models.DateTimeField(auto_now_add=True)

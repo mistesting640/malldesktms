@@ -99,6 +99,20 @@ def run_reminders():
             )
             logger.info(f"[REMINDER] Sent reminder #{reminder_count+1} for {ticket.ticket_id} ({hours_open}h open)")
 
+            # ── Auto-escalate after max reminders ────────
+            # If ticket has hit max reminders and still unresolved → escalate
+            escalate_after = getattr(settings, 'TICKET_ESCALATE_AFTER_REMINDERS', 3)
+            if (reminder_count + 1) >= escalate_after and ticket.assigned_to:
+                try:
+                    from tickets.views import _do_escalate
+                    result = _do_escalate(ticket, escalated_by=None, manual=False)
+                    if result['success']:
+                        logger.info(f"[ESCALATION] Auto-escalated {ticket.ticket_id}: {result['message']}")
+                    else:
+                        logger.info(f"[ESCALATION] Could not escalate {ticket.ticket_id}: {result['message']}")
+                except Exception as esc_err:
+                    logger.error(f"[ESCALATION] Error escalating {ticket.ticket_id}: {esc_err}")
+
     except Exception as e:
         logger.error(f"[REMINDER] Scheduler error: {e}", exc_info=True)
     finally:

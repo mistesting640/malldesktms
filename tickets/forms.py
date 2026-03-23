@@ -22,10 +22,7 @@ class TicketCreateForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        # Pre-fill complainant info for external users
         if self.user and self.user.is_external:
-            self.fields['complainant_name'].initial = self.user.full_name
-            self.fields['complainant_company'].initial = self.user.business_name
             if self.user.project:
                 self.fields['mall'].initial = self.user.project
         for field in self.fields.values():

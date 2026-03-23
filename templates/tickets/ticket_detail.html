@@ -190,14 +190,27 @@
       <div class="card-body">
         <form method="post" action="{% url 'ticket_assign' ticket.pk %}">
           {% csrf_token %}
+
+          <div class="form-group">
+            <label>Designation</label>
+            <select id="assign_designation" class="form-input">
+              <option value="">— All Staff —</option>
+              {% for desig in designations %}
+              <option value="{{ desig.id }}">{{ desig.name }} (Level {{ desig.level_order }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
           <div class="form-group">
             <label>Assign To</label>
             {{ assign_form.assigned_to }}
           </div>
+
           <div class="form-group">
             <label>Status</label>
             {{ assign_form.ticket_status }}
           </div>
+
           <button type="submit"
             class="btn btn-primary" style="width:100%;justify-content:center;"
             onclick="submitWithWhatsApp(this, 'assign')">
@@ -206,6 +219,35 @@
         </form>
       </div>
     </div>
+
+    <!-- Escalate Ticket -->
+    {% if ticket.assigned_to %}
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><h3>Escalation</h3></div>
+      <div class="card-body">
+        {% if ticket.escalated %}
+        <div style="font-size:12px;color:var(--warning);margin-bottom:10px;">
+          ⚠ Already escalated {{ ticket.escalation_count }} time{{ ticket.escalation_count|pluralize }}
+          {% if ticket.escalated_from %} from {{ ticket.escalated_from.full_name }}{% endif %}
+        </div>
+        {% endif %}
+        <div style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5;">
+          Currently assigned to <strong>{{ ticket.assigned_to.full_name }}</strong>
+          {% if ticket.assigned_to.designation %}
+          — <span style="color:var(--accent);">{{ ticket.assigned_to.designation.name }}</span>
+          {% endif %}<br>
+          Escalate will reassign to the next higher designation automatically.
+        </div>
+        <form method="post" action="{% url 'ticket_escalate' ticket.pk %}"
+              onsubmit="return confirm('Escalate this ticket to the next level?')">
+          {% csrf_token %}
+          <button type="submit" class="btn" style="width:100%;justify-content:center;background:rgba(245,158,11,.1);color:var(--warning);border:1px solid rgba(245,158,11,.3);">
+            ⬆ Escalate to Next Level
+          </button>
+        </form>
+      </div>
+    </div>
+    {% endif %}
     {% endif %}
 
     <!-- Resolve Ticket -->
@@ -275,6 +317,45 @@
 </div>
 
 
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"></script>
+<script>
+// Designation → filter assign dropdown
+$(document).ready(function(){
+  const AJAX_USERS = "{% url 'ajax_get_users_by_designation' %}";
+  const deptId = "{{ ticket.department.id }}";
+
+  $('#assign_designation').on('change', function(){
+    const desigId = $(this).val();
+    const $assignTo = $('[name="assigned_to"]');
+    const currentVal = $assignTo.val();
+
+    if (!desigId) {
+      // Show all internal users
+      $assignTo.find('option').show();
+      return;
+    }
+
+    fetch(AJAX_USERS + '?designation_id=' + desigId + '&dept_id=' + deptId)
+      .then(r => r.json())
+      .then(data => {
+        const userIds = data.users.map(u => String(u.id));
+        $assignTo.find('option').each(function(){
+          const val = $(this).val();
+          if (!val || userIds.includes(val)) {
+            $(this).show().prop('disabled', false);
+          } else {
+            $(this).hide().prop('disabled', true);
+          }
+        });
+        // Reset selection if current is filtered out
+        if (currentVal && !userIds.includes(currentVal)) {
+          $assignTo.val('');
+        }
+      });
+  });
+});
+</script>
 
 {% if user.is_authenticated and user.is_internal and whatsapp_number %}
 <script>
@@ -359,7 +440,7 @@ function submitWithWhatsApp(btn, action) {
   .meta{font-size:12px;color:#64748b;margin-top:4px;}
 
   /* ── CARDS ── */
-  .card{background:#111827;border:1px solid #1f2d45;border-radius:12px;overflow:auto;margin-bottom:16px;}
+  .card{background:#111827;border:1px solid #1f2d45;border-radius:12px;overflow:hidden;margin-bottom:16px;}
   .card-head{padding:14px 18px;border-bottom:1px solid #1f2d45;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;}
   .card-body{padding:18px;}
 

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Mall, Department, SubCategory, Ticket, TicketUpdate
+from .models import Mall, Department, SubCategory, Ticket, TicketUpdate, Shop, ShopContact, Designation
 
 
 @admin.register(Mall)
@@ -62,3 +62,32 @@ class TicketUpdateAdmin(admin.ModelAdmin):
     list_display  = ('ticket', 'updated_by', 'old_status', 'new_status', 'created_at')
     list_filter   = ('new_status',)
     readonly_fields = ('created_at',)
+
+
+class ShopContactInline(admin.TabularInline):
+    model   = ShopContact
+    extra   = 1
+    fields  = ('contact_type', 'name', 'mobile', 'email', 'is_active')
+
+
+@admin.register(Shop)
+class ShopAdmin(admin.ModelAdmin):
+    list_display  = ('shop_number', 'shop_name', 'mall', 'floor', 'is_active')
+    list_filter   = ('mall', 'is_active', 'floor')
+    search_fields = ('shop_number', 'shop_name')
+    inlines       = [ShopContactInline]
+
+
+@admin.register(ShopContact)
+class ShopContactAdmin(admin.ModelAdmin):
+    list_display  = ('name', 'contact_type', 'shop', 'mobile', 'email', 'is_active')
+    list_filter   = ('contact_type', 'shop__mall', 'is_active')
+    search_fields = ('name', 'mobile', 'email', 'shop__shop_number')
+
+
+@admin.register(Designation)
+class DesignationAdmin(admin.ModelAdmin):
+    list_display  = ('name', 'department', 'level_order', 'is_active')
+    list_filter   = ('department', 'is_active')
+    ordering      = ('level_order',)
+    help_text     = "Set level_order: 1=lowest (Technician), higher=senior. Escalation goes up the levels."
